@@ -14,4 +14,9 @@ class Product extends Model
     public $timestamps = true;
 
     protected $fillable = ['name', 'description', 'price', 'stock'];
+
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
 }

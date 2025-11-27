@@ -19,16 +19,29 @@ class ProdcutController extends Controller
             return DataTables::of($query)
                     ->addIndexColumn()
                     ->addColumn('action', function ($item){
-                        return '
-                            <div class="d-flex gap-2 btn-icon-list">
+                        $buttons = '<div class="d-flex gap-2 btn-icon-list">';
+
+                        // Jika user role = 'adm', tampilkan tombol edit dan delete
+                        if (auth()->user()->role === 'adm') {
+                            $buttons .= '
                                 <a id="edit" class="btn btn-warning btn-circle" data-id="' . $item->id . '">
                                     <i class="fas fa-pencil-alt"></i>
                                 </a>
                                 <a id="delete" class="btn btn-danger btn-circle" data-id="' . $item->id . '">
                                     <i class="fas fa-trash"></i>
                                 </a>
-                            </div>
+                            ';
+                        }
+                        
+                        $buttons .= '
+                            <a id="addchart" class="btn btn-success btn-circle" data-id="' . $item->id . '">
+                                <i class="fa fa-shopping-cart"></i>
+                            </a>
                         ';
+
+                        $buttons .= '</div>';
+
+                        return $buttons;
                     })
                     ->rawColumns(['action'])
                     ->make(true);

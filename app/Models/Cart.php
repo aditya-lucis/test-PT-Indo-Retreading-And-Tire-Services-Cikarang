@@ -13,5 +13,15 @@ class Cart extends Model
     public $incrementing = true;
     public $timestamps = true;
 
-    protected $fillable = ['customer_id'];
+    protected $fillable = ['user_id'];
+
+    public function customer()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(CartItem::class);
+    }
 }

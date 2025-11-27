@@ -75,6 +75,51 @@
     </div>
 </div>
 
+<div class="modal fade" id="addtocartModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add To Cart</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addtoCart">
+                    @csrf
+                    <div class="form-group">
+                        <label for="nametocart">Nama</label>
+                        <input type="hidden" name="product_id" id="product_id">
+                        <input type="hidden" id="maxstock">
+                        <input type="hidden" id="customer_id">
+                        <input type="text" class="form-control" id="nametocart" name="nametocart" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="brandtocart">Brand</label>
+                        <input type="text" class="form-control" id="brandtocart" name="brandtocart" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="pricetocart">Price</label>
+                        <input type="number" class="form-control" id="pricetocart" name="pricetocart" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="qty">QTY</label>
+                        <input type="number" class="form-control" id="qty" name="qty" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="qty">Total</label>
+                        <input type="number" class="form-control" id="total" name="total" readonly required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="btn-addtochart" style="display: none;">Add To Cart</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @section('script-bottom')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -102,7 +147,13 @@
                 { "data": 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'name', name: 'name' },
                 { data: 'description', name: 'description' },
-                { data: 'price', name: 'price' },
+                {
+                    data: 'price',
+                    name: 'price',
+                    render: function(data, type, row) {
+                        return Number(data).toLocaleString('id-ID');
+                    }
+                },
                 { data: 'stock', name: 'stock' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, width: '15%' }
             ]
@@ -240,5 +291,97 @@
             })
         }
     })
+
+    $('body').on('click', '#addchart', function(e){
+        e.preventDefault()
+        
+        let id = $(this).data('id')
+
+        $.ajax({
+            url: "{{ route('products.edit', ':id') }}".replace(':id', id),
+            type: "GET",
+            success: function(response){
+                $('#product_id').val(response.id)
+                $('#nametocart').val(response.name)
+                $('#brandtocart').val(response.description)
+                $('#pricetocart').val(response.price)
+                $('#qty').val(1)
+                $('#maxstock').val(response.stock)
+                $('#customer_id').val("{{ auth()->user()->id }}");
+                $('#btn-addtochart').show();
+
+                let price = parseFloat($('#pricetocart').val())
+                let qty = parseFloat($('#qty').val())
+
+                totalvalue = price * qty
+
+                $('#total').val(totalvalue)
+
+                $('#addtocartModal').modal('show')
+            }
+        })
+    })
+
+    $('body').on('input', '#qty', function () {
+
+        let max = parseInt($('#maxstock').val());
+        let qty = parseInt($(this).val());
+        let price = parseFloat($('#pricetocart').val());
+
+        // Jika qty melebihi stok → set ke stok
+        if (qty > max) {
+            qty = max;
+            $(this).val(max);
+        }
+
+        // Jika qty kurang dari 1 → set ke 1
+        if (qty < 1 || isNaN(qty)) {
+            qty = 1;
+            $(this).val(1);
+        }
+
+        // Hitung total
+        $('#total').val(qty * price);
+    });
+
+    $('#addtocartModal').on('hidden.bs.modal', function () {
+        $('#product_id').val('');
+        $('#nametocart').val('');
+        $('#brandtocart').val('');
+        $('#pricetocart').val('');
+        $('#qty').val('');
+        $('#total').val('');
+        $('#maxstock').val('');
+        $('#customer_id').val('');
+    });
+
+    $('#btn-addtochart').on('click', function(e) {
+        e.preventDefault()
+
+        $.ajax({
+            url: "{{ route('addToCart') }}",
+            type: "POST",
+
+            data: {
+                _token: "{{ csrf_token() }}",
+                customer_id: $('#customer_id').val(),
+                product_id: $('#product_id').val(),
+                quantity: $('#qty').val()
+            },
+                success: function(response){
+                    if (response.success) {
+                        Swal.fire("Berhasil!", response.message, "success");
+                        $('#addtocartModal').modal('hide');
+                    } else {
+                        Swal.fire("Gagal!", response.message || "Terjadi kesalahan!", "error");
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire("Error!", "Terjadi kesalahan pada server!", "error");
+                    console.log(xhr.responseText); // Debugging
+                }
+        })
+    })
+
 </script>
 @endsection

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProdcutController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +18,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('login')->middleware('guest');
 
-Route::resource('products', ProdcutController::class);
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware(['auth'])->group(function (){
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::resource('products', ProdcutController::class);
+    Route::get('/cart/data', [CartController::class, 'getCartData'])->name('cart.data');
+    Route::post('/addToCart', [CartController::class, 'addToCart'])->name('addToCart');
+});

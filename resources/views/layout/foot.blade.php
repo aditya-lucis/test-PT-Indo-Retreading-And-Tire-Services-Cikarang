@@ -23,4 +23,57 @@
 <!-- Custom scripts for all pages-->
 <script src="{{ asset('assets/master/js/sb-admin-2.min.js')}}"></script>
 
+<script>
+    $(document).ready(function() {
+
+        $("#openCart").on("click", function (e) {
+            e.preventDefault();
+
+            // buka modal dulu
+            $("#cartModal").modal('show');
+
+            // kosongkan konten
+            $("#cart-items-body").html(`
+                <tr><td colspan="4" class="text-center">Loading...</td></tr>
+            `);
+
+            // ambil data cart via AJAX
+            $.ajax({
+                url: "{{ route('cart.data') }}",
+                type: "GET",
+                success: function(response) {
+
+                    let cart = response.cart;
+
+                    if (!cart || cart.items.length === 0) {
+                        $("#cart-items-body").html(`
+                            <tr>
+                                <td colspan="4" class="text-center">Keranjang Kosong</td>
+                            </tr>
+                        `);
+                        return;
+                    }
+
+                    let rows = "";
+
+                    cart.items.forEach(item => {
+                        rows += `
+                            <tr>
+                                <td>${item.product.name}</td>
+                                <td>Rp ${Number(item.price_at_time).toLocaleString()}</td>
+                                <td>${item.quantity}</td>
+                                <td>Rp ${(item.quantity * item.price_at_time).toLocaleString()}</td>
+                            </tr>
+                        `;
+                    });
+
+                    $("#cart-items-body").html(rows);
+                }
+            });
+        });
+
+    });
+</script>
+
+
 @yield('script-bottom')
